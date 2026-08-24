@@ -6,7 +6,7 @@ import { hostname } from "node:os";
 import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-import wisp from "wisp-server-node";
+import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,127 +14,62 @@ const publicPath = join(__dirname, "public");
 
 const app = express();
 
+// Security Headers (COOP / COEP) Middleware
+app.use((req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    next();
+});
+
+// 静的ファイルのミドルウェア設定
 app.use(express.static(publicPath));
+app.use("/uv/", express.static(uvPath));
+app.use("/epoxy/", express.static(epoxyPath));
+app.use("/baremux/", express.static(baremuxPath));
 
-app.use(
-    "/uv/",
-    express.static(uvPath)
-);
-
-app.use(
-    "/epoxy/",
-    express.static(epoxyPath)
-);
-
-app.use(
-    "/baremux/",
-    express.static(baremuxPath)
-);
-
+// 404 ハンドラー
 app.use((req, res) => {
-    res.status(404);
-
-    res.sendFile(
-        join(publicPath, "404.html")
-    );
+    res.status(404).sendFile(join(publicPath, "404.html"));
 });
 
-const server = createServer();
+// Express アプリを統合した HTTP サーバーの作成
+const server = createServer(app);
 
-server.on("request", (req, res) => {
-    res.setHeader(
-        "Cross-Origin-Opener-Policy",
-        "same-origin"
-    );
-
-    res.setHeader(
-        "Cross-Origin-Embedder-Policy",
-        "require-corp"
-    );
-
-    app(req, res);
-});
-
-server.on(
-    "upgrade",
-    (req, socket, head) => {
-        if (
-            req.url &&
-            req.url.endsWith("/wisp/")
-        ) {
-            wisp.routeRequest(
-                req,
-                socket,
-                head
-            );
-
-            return;
-        }
-
+// WebSocket / Wisp ルーティング
+server.on("upgrade", (req, socket, head) => {
+    if (req.url && req.url.endsWith("/wisp/")) {
+        wisp.routeRequest(req, socket, head);
+    } else {
         socket.end();
     }
-);
+});
 
-let port = parseInt(
-    process.env.PORT || "",
-    10
-);
-
+// ポート番号の設定
+let port = parseInt(process.env.PORT || "", 10);
 if (Number.isNaN(port)) {
     port = 8080;
 }
 
-server.on(
-    "listening",
-    () => {
-        const address =
-            server.address();
+// サーバー起動ログ
+server.on("listening", () => {
+    const address = server.address();
+    if (!address || typeof address === "string") return;
 
-        if (
-            !address ||
-            typeof address === "string"
-        ) {
-            return;
-        }
+    console.log("Ultraviolet learning proxy is running.");
+    console.log(`Port: ${address.port}`);
+    console.log(`http://localhost:${address.port}`);
+    console.log(`http://${hostname()}:${address.port}`);
+});
 
-        console.log(
-            "Ultraviolet learning proxy is running."
-        );
-
-        console.log(
-            `Port: ${address.port}`
-        );
-
-        console.log(
-            `http://localhost:${address.port}`
-        );
-
-        console.log(
-            `http://${hostname()}:${address.port}`
-        );
-    }
-);
-
+// グレースフルシャットダウン
 function shutdown() {
-    console.log(
-        "Shutting down server..."
-    );
-
+    console.log("Shutting down server...");
     server.close(() => {
         process.exit(0);
     });
 }
 
-process.on(
-    "SIGINT",
-    shutdown
-);
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
-process.on(
-    "SIGTERM",
-    shutdown
-);
-
-server.listen({
-    port
-});
+server.listen({ port });
