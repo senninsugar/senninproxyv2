@@ -1,0 +1,19 @@
+{
+  "name": "ultraviolet-learning",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local learning application based on the official Ultraviolet project",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@mercuryworkshop/bare-mux": "^2.1.7",
+    "@mercuryworkshop/epoxy-transport": "^2.1.27",
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.7",
+    "express": "^5.1.0",
+    "ultraviolet-static": "^1.0.4",
+    "wisp-server-node": "^0.1.0"
+  }
+}
