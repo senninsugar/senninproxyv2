@@ -4,13 +4,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hostname } from "node:os";
 import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
-import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const publicPath = join(__dirname, "public");
+
+// epoxy-transport の dist パスを取得
+const epoxyPath = join(__dirname, "node_modules", "@mercuryworkshop", "epoxy-transport", "dist");
 
 const app = express();
 
@@ -72,4 +74,8 @@ function shutdown() {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-server.listen({ port });
+// 外部からのアクセスを受け取れるよう 0.0.0.0 にバインド
+server.listen({
+    port,
+    host: "0.0.0.0"
+});
