@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "engines": {
     "node": ">=20"
@@ -14,7 +15,6 @@
     "@mercuryworkshop/epoxy-transport": "2.1.27",
     "@titaniumnetwork-dev/ultraviolet": "3.2.7",
     "express": "5.1.0",
-    "ultraviolet-static": "1.0.4",
     "wisp-server-node": "0.1.0"
   }
 }
